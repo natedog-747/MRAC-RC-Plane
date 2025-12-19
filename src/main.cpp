@@ -6,8 +6,8 @@
 
 // GPIO configuration for the RC channel mirror
 static const int PWM_IN_PIN  = 12;  // GPIO with Lemon RX channel input
-static const int PWM_OUT_PIN = 14;  // GPIO to output the mirrored signal
-static const int PWM_OVERRIDE_PIN = 27; // GPIO with override input (e.g. separate channel)
+static const int PWM_OUT_PIN = 27;  // GPIO to output the mirrored signal
+static const int PWM_OVERRIDE_PIN = 14; // GPIO with override input (e.g. separate channel)
 
 // Servo output limits (microseconds)
 static const uint16_t SERVO_MIN_US = 1000;

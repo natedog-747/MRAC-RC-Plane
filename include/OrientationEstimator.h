@@ -1,12 +1,23 @@
 #pragma once
 
+#include <Adafruit_BNO055.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 #include "ControlData.h"
 
-// Skeleton orientation estimator; fill in with sensor fusion as needed.
+// Wraps the BNO055 IMU to provide roll/pitch/yaw estimates.
 class OrientationEstimator {
  public:
   OrientationEstimator() = default;
 
-  // Update orientation estimate; replace parameters with real sensor inputs.
+  // Initialize the IMU; safe to call repeatedly.
+  bool begin();
+
+  // Update orientation estimate; returns zeros if the IMU is unavailable.
   ControlData estimate(uint32_t nowMs);
+
+ private:
+  Adafruit_BNO055 bno_{55};
+  bool ready_ = false;
+  bool warned_ = false;
 };

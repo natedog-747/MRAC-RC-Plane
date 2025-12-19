@@ -1,5 +1,7 @@
 #pragma once
 
+#include <BasicLinearAlgebra.h>
+using namespace BLA;
 #include "ControlData.h"
 
 // Skeleton control algorithm; fill in with your control logic.

@@ -33,6 +33,9 @@ void ControlServoTask::run() {
   // Attach servo output; min/max constrain the microsecond range.
   servo_.attach(outPin_, servoMinUs_, servoMaxUs_);
 
+  // Initialize IMU; continue even if it is absent so mirroring still works.
+  estimator_.begin();
+
   for (;;) {
     // Measure the override channel first; use a small state machine to require consecutive samples.
     uint32_t overrideUs = pulseIn(overridePin_, HIGH, kPulseTimeoutUs);
@@ -93,7 +96,7 @@ void ControlServoTask::run() {
     uint32_t targetUs = 0;
 
     if (overrideActive_) {
-      // Run placeholder estimation + control; send to logger.
+      // Run estimation + control; send to logger.
       uint32_t nowMs = millis();
       ControlData state = estimator_.estimate(nowMs);
       state.overrideActive = true;
