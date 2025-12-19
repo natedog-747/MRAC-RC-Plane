@@ -37,6 +37,9 @@ void ControlServoTask::run() {
   estimator_.begin();
 
   for (;;) {
+    uint32_t nowMs = millis();
+    ControlData state = estimator_.estimate(nowMs);
+
     // Measure the override channel first; use a small state machine to require consecutive samples.
     uint32_t overrideUs = pulseIn(overridePin_, HIGH, kPulseTimeoutUs);
     bool overrideMeasurement = (overrideUs > kMinPulseUs) && (overrideUs >= overrideThresholdUs_);
@@ -96,16 +99,8 @@ void ControlServoTask::run() {
     uint32_t targetUs = 0;
 
     if (overrideActive_) {
-      // Run estimation + control; send to logger.
-      uint32_t nowMs = millis();
-      ControlData state = estimator_.estimate(nowMs);
       state.overrideActive = true;
       state.controlSignal = controller_.computeCommand(state);
-
-      // Publish to logger if queue available.
-      if (dataQueue_) {
-        xQueueSend(dataQueue_, &state, 0);
-      }
 
       // While control code is a skeleton, hold servo at neutral (90 deg).
       targetAngle = constrain(static_cast<int>(state.controlSignal), 0, 180);
@@ -119,6 +114,8 @@ void ControlServoTask::run() {
         // No valid pulse: keep last duty and avoid tight spinning.
         vTaskDelay(pdMS_TO_TICKS(5));
       }
+      state.overrideActive = false;
+      state.controlSignal = 0.0f;
     }
 
     if (targetAngle >= 0) {
@@ -126,6 +123,11 @@ void ControlServoTask::run() {
     } else if (targetUs > 0) {
       // Mirror by writing the measured pulse width directly.
       servo_.writeMicroseconds(targetUs);
+    }
+
+    // Publish to logger if queue available (logs orientation continuously).
+    if (dataQueue_) {
+      xQueueSend(dataQueue_, &state, 0);
     }
 
     // Yield briefly to let the idle task run so the watchdog is satisfied.
