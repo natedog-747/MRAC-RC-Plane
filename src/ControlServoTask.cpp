@@ -6,7 +6,8 @@ ControlServoTask::ControlServoTask(int inPin,
                                    uint32_t overrideThresholdUs,
                                    int overrideAngleDeg,
                                    uint16_t servoMinUs,
-                                   uint16_t servoMaxUs)
+                                   uint16_t servoMaxUs,
+                                   QueueHandle_t dataQueue)
     : TaskBase("Control_Servo", 4096, 1, 0),
       inPin_(inPin),
       outPin_(outPin),
@@ -14,10 +15,15 @@ ControlServoTask::ControlServoTask(int inPin,
       overrideThresholdUs_(overrideThresholdUs),
       overrideAngleDeg_(overrideAngleDeg),
       servoMinUs_(servoMinUs),
-      servoMaxUs_(servoMaxUs) {}
+      servoMaxUs_(servoMaxUs),
+      dataQueue_(dataQueue) {}
 
 volatile bool& ControlServoTask::overrideFlag() {
   return overrideActive_;
+}
+
+void ControlServoTask::setDataQueue(QueueHandle_t queue) {
+  dataQueue_ = queue;
 }
 
 void ControlServoTask::run() {
@@ -87,7 +93,19 @@ void ControlServoTask::run() {
     uint32_t targetUs = 0;
 
     if (overrideActive_) {
-      targetAngle = constrain(overrideAngleDeg_, 0, 180);
+      // Run placeholder estimation + control; send to logger.
+      uint32_t nowMs = millis();
+      ControlData state = estimator_.estimate(nowMs);
+      state.overrideActive = true;
+      state.controlSignal = controller_.computeCommand(state);
+
+      // Publish to logger if queue available.
+      if (dataQueue_) {
+        xQueueSend(dataQueue_, &state, 0);
+      }
+
+      // While control code is a skeleton, hold servo at neutral (90 deg).
+      targetAngle = constrain(static_cast<int>(state.controlSignal), 0, 180);
     } else {
       // Measure the high time of the incoming RC pulse (blocking up to timeout).
       uint32_t highUs = pulseIn(inPin_, HIGH, kPulseTimeoutUs);

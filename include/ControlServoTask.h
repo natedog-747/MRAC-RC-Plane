@@ -3,6 +3,10 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include "TaskBase.h"
+#include "ControlAlgorithm.h"
+#include "ControlData.h"
+#include "OrientationEstimator.h"
+#include "freertos/queue.h"
 
 // Task that reads RC pulses and drives a servo with override handling.
 class ControlServoTask : public TaskBase {
@@ -13,10 +17,12 @@ class ControlServoTask : public TaskBase {
                    uint32_t overrideThresholdUs = 1750,
                    int overrideAngleDeg = 90,
                    uint16_t servoMinUs = 1000,
-                   uint16_t servoMaxUs = 2000);
+                   uint16_t servoMaxUs = 2000,
+                   QueueHandle_t dataQueue = nullptr);
 
   // Exposes a flag others can watch to know when override is active.
   volatile bool& overrideFlag();
+  void setDataQueue(QueueHandle_t queue);
 
  protected:
   void run() override;
@@ -24,7 +30,7 @@ class ControlServoTask : public TaskBase {
  private:
   static constexpr uint32_t kPulseTimeoutUs = 30000;     // allows for >20 ms if signal hiccups
   static constexpr uint32_t kMinPulseUs = 500;           // ignore noise below this
-  static constexpr uint8_t kOverrideConfirmations = 3;   // consecutive readings required to toggle override
+  static constexpr uint8_t kOverrideConfirmations = 10;   // consecutive readings required to toggle override
 
   enum class OverrideState { Mirroring, ConfirmingOverride, OverrideActive, ConfirmingMirror };
 
@@ -37,6 +43,9 @@ class ControlServoTask : public TaskBase {
   uint16_t servoMaxUs_;
 
   Servo servo_;
+  OrientationEstimator estimator_;
+  ControlAlgorithm controller_;
+  QueueHandle_t dataQueue_ = nullptr;
   volatile bool overrideActive_ = false;
   OverrideState overrideState_ = OverrideState::Mirroring;
   uint8_t overrideTrueCount_ = 0;

@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "ControlServoTask.h"
-#include "CounterTask.h"
+#include "ControlData.h"
+#include "SdLoggerTask.h"
+#include "freertos/queue.h"
 
 // GPIO configuration for the RC channel mirror
 static const int PWM_IN_PIN  = 12;  // GPIO with Lemon RX channel input
@@ -13,7 +15,10 @@ static const uint16_t SERVO_MAX_US = 2000;
 
 // Override behavior: when override pulse >= threshold, drive servo to override angle instead of mirroring
 static const uint32_t OVERRIDE_THRESHOLD_US = 1500; // near servo midpoint
-static const int OVERRIDE_ANGLE_DEG = 160;          // angle to drive when override is active
+static const int OVERRIDE_ANGLE_DEG = 90;          // angle to drive when override is active
+
+// Shared queue for passing control data from core0 -> core1 logger.
+static QueueHandle_t gControlDataQueue = nullptr;
 
 // Instantiate tasks with the chosen pins/config
 ControlServoTask controlServoTask(PWM_IN_PIN,
@@ -22,15 +27,20 @@ ControlServoTask controlServoTask(PWM_IN_PIN,
                                   OVERRIDE_THRESHOLD_US,
                                   OVERRIDE_ANGLE_DEG,
                                   SERVO_MIN_US,
-                                  SERVO_MAX_US);
-CounterTask counterTask(controlServoTask.overrideFlag());
+                                  SERVO_MAX_US,
+                                  gControlDataQueue);
+SdLoggerTask sdLoggerTask(gControlDataQueue, 1);
 
 void setup() {
   Serial.begin(9600);
   // while (!Serial) { vTaskDelay(1); } // optional wait for USB
 
+  gControlDataQueue = xQueueCreate(10, sizeof(ControlData));
+  controlServoTask.setDataQueue(gControlDataQueue);
+  sdLoggerTask.setQueue(gControlDataQueue);
+
   controlServoTask.start();
-  counterTask.start();
+  sdLoggerTask.start();
 }
 
 void loop() {
