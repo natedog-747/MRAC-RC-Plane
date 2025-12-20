@@ -3,7 +3,7 @@
 #include <cmath>
 
 namespace {
-const Matrix<1, 3> kGain = {0.75f, 0.1f, 0.1f};  // tune as needed
+const Matrix<1, 3> kGain = {1.0f, 0.20f, 0.13f};  // tune as needed
 constexpr float kServoCenter = 85.0f;
 constexpr float kMaxServoDeflection = 25.0f;
 }  // namespace
