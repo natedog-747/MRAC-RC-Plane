@@ -17,6 +17,7 @@ struct ControlData {
   float eulerRollRateDegPerSec = 0.0f;
   float eulerPitchRateDegPerSec = 0.0f;
   float eulerYawRateDegPerSec = 0.0f;
+  float yawErrorIntegralDegSec = 0.0f;
   float dtSec = 0.0f;
   float controlSignal = 0.0f;   // e.g., actuator command or servo angle
   bool overrideActive = false;

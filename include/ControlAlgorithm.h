@@ -10,5 +10,5 @@ class ControlAlgorithm {
   ControlAlgorithm() = default;
 
   // Compute actuator command based on estimated state; replace signature as needed.
-  float computeCommand(const ControlData& state);
+  float computeCommand(ControlData& state);
 };
