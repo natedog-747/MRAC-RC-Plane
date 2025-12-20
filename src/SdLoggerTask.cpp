@@ -27,26 +27,10 @@ void SdLoggerTask::run() {
   ControlData incoming;
   for (;;) {
     if (dataQueue_ && xQueueReceive(dataQueue_, &incoming, pdMS_TO_TICKS(100)) == pdPASS) {
-      // Only print to Serial when override is active.
-      if (incoming.overrideActive) {
-        Serial.printf("[LOG] t=%lu dt=%.4f accel(m/s^2)=(%.3f,%.3f,%.3f) gyro(rad/s)=(%.3f,%.3f,%.3f) euler(deg)=(%.2f,%.2f,%.2f) euler_rate(deg/s)=(%.2f,%.2f,%.2f) yaw_int(deg*s)=%.3f cmd=%.2f\n",
-                      static_cast<unsigned long>(incoming.timestampMs),
-                      static_cast<double>(incoming.dtSec),
-                      static_cast<double>(incoming.accelXMps2),
-                      static_cast<double>(incoming.accelYMps2),
-                      static_cast<double>(incoming.accelZMps2),
-                      static_cast<double>(incoming.gyroXRadPerSec),
-                      static_cast<double>(incoming.gyroYRadPerSec),
-                      static_cast<double>(incoming.gyroZRadPerSec),
-                      static_cast<double>(incoming.eulerRollDeg),
-                      static_cast<double>(incoming.eulerPitchDeg),
-                      static_cast<double>(incoming.eulerYawDeg),
-                      static_cast<double>(incoming.eulerRollRateDegPerSec),
-                      static_cast<double>(incoming.eulerPitchRateDegPerSec),
-                      static_cast<double>(incoming.eulerYawRateDegPerSec),
-                      static_cast<double>(incoming.yawErrorIntegralDegSec),
-                      static_cast<double>(incoming.controlSignal));
-      }
+      Serial.printf("euler(deg) roll=%.2f pitch=%.2f yaw=%.2f\n",
+                    static_cast<double>(incoming.eulerRollDeg),
+                    static_cast<double>(incoming.eulerPitchDeg),
+                    static_cast<double>(incoming.eulerYawDeg));
 
       if (!sdReady) {
         sdReady = csvLogger.begin();

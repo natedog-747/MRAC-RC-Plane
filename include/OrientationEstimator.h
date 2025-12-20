@@ -16,6 +16,9 @@ class OrientationEstimator {
   // Update orientation estimate; returns zeros if the IMU is unavailable.
   ControlData estimate(uint32_t nowMs);
 
+  // Reinitialize orientation using the current sensor readings.
+  bool resetOrientation();
+
   float gyroX() const { return lastGyroRadPerSec_.x(); }
   float gyroY() const { return lastGyroRadPerSec_.y(); }
   float gyroZ() const { return lastGyroRadPerSec_.z(); }

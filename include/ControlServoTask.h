@@ -15,6 +15,7 @@ class ControlServoTask : public TaskBase {
                    int outPin,
                    int overridePin,
                    uint32_t overrideThresholdUs = 1750,
+                   uint32_t overrideResetThresholdUs = 1800,
                    int overrideAngleDeg = 90,
                    uint16_t servoMinUs = 1000,
                    uint16_t servoMaxUs = 2000,
@@ -38,6 +39,7 @@ class ControlServoTask : public TaskBase {
   int outPin_;
   int overridePin_;
   uint32_t overrideThresholdUs_;
+  uint32_t overrideResetThresholdUs_;
   int overrideAngleDeg_;
   uint16_t servoMinUs_;
   uint16_t servoMaxUs_;
@@ -50,4 +52,5 @@ class ControlServoTask : public TaskBase {
   OverrideState overrideState_ = OverrideState::Mirroring;
   uint8_t overrideTrueCount_ = 0;
   uint8_t overrideFalseCount_ = 0;
+  bool overrideResetLatched_ = false;
 };

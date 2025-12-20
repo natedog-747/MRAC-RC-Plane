@@ -14,7 +14,8 @@ static const uint16_t SERVO_MIN_US = 1000;
 static const uint16_t SERVO_MAX_US = 2000;
 
 // Override behavior: when override pulse >= threshold, drive servo to override angle instead of mirroring
-static const uint32_t OVERRIDE_THRESHOLD_US = 1500; // near servo midpoint
+static const uint32_t OVERRIDE_THRESHOLD_US = 1400; // near servo midpoint
+static const uint32_t OVERRIDE_RESET_THRESHOLD_US = 1800; // higher "level" to re-zero orientation
 static const int OVERRIDE_ANGLE_DEG = 90;          // angle to drive when override is active
 
 // Shared queue for passing control data from core0 -> core1 logger.
@@ -25,6 +26,7 @@ ControlServoTask controlServoTask(PWM_IN_PIN,
                                   PWM_OUT_PIN,
                                   PWM_OVERRIDE_PIN,
                                   OVERRIDE_THRESHOLD_US,
+                                  OVERRIDE_RESET_THRESHOLD_US,
                                   OVERRIDE_ANGLE_DEG,
                                   SERVO_MIN_US,
                                   SERVO_MAX_US,

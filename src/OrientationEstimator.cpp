@@ -90,6 +90,19 @@ bool OrientationEstimator::begin() {
   return true;
 }
 
+bool OrientationEstimator::resetOrientation() {
+  if (!ready_) {
+    return begin();
+  }
+
+  initializeQuatFromAccel(bno_, quat_);
+  lastUpdateMs_ = millis();
+  lastEulerDeg_ = imu::Vector<3>();
+  prevEulerDeg_ = imu::Vector<3>();
+  lastEulerRateDegPerSec_ = imu::Vector<3>();
+  return true;
+}
+
 ControlData OrientationEstimator::estimate(uint32_t nowMs) {
   ControlData data;
   data.timestampMs = nowMs;

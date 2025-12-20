@@ -4,6 +4,7 @@ ControlServoTask::ControlServoTask(int inPin,
                                    int outPin,
                                    int overridePin,
                                    uint32_t overrideThresholdUs,
+                                   uint32_t overrideResetThresholdUs,
                                    int overrideAngleDeg,
                                    uint16_t servoMinUs,
                                    uint16_t servoMaxUs,
@@ -13,6 +14,7 @@ ControlServoTask::ControlServoTask(int inPin,
       outPin_(outPin),
       overridePin_(overridePin),
       overrideThresholdUs_(overrideThresholdUs),
+      overrideResetThresholdUs_(overrideResetThresholdUs),
       overrideAngleDeg_(overrideAngleDeg),
       servoMinUs_(servoMinUs),
       servoMaxUs_(servoMaxUs),
@@ -44,6 +46,8 @@ void ControlServoTask::run() {
     // Measure the override channel first; use a small state machine to require consecutive samples.
     uint32_t overrideUs = pulseIn(overridePin_, HIGH, kPulseTimeoutUs);
     bool overrideMeasurement = (overrideUs > kMinPulseUs) && (overrideUs >= overrideThresholdUs_);
+    bool overrideResetRequest =
+        (overrideUs > kMinPulseUs) && (overrideUs >= overrideResetThresholdUs_);
 
     switch (overrideState_) {
       case OverrideState::Mirroring:
@@ -54,6 +58,7 @@ void ControlServoTask::run() {
         } else {
           overrideTrueCount_ = overrideFalseCount_ = 0;
           overrideActive_ = false;
+          overrideResetLatched_ = false;
         }
         break;
 
@@ -68,6 +73,7 @@ void ControlServoTask::run() {
           overrideState_ = OverrideState::Mirroring;
           overrideTrueCount_ = overrideFalseCount_ = 0;
           overrideActive_ = false;
+          overrideResetLatched_ = false;
         }
         break;
 
@@ -87,6 +93,7 @@ void ControlServoTask::run() {
             overrideState_ = OverrideState::Mirroring;
             overrideActive_ = false;
             overrideTrueCount_ = overrideFalseCount_ = 0;
+            overrideResetLatched_ = false;
           }
         } else {
           overrideState_ = OverrideState::OverrideActive;
@@ -94,6 +101,10 @@ void ControlServoTask::run() {
           overrideFalseCount_ = 0;
         }
         break;
+    }
+
+    if (!overrideResetRequest) {
+      overrideResetLatched_ = false;
     }
 
     int targetAngle = -1;
@@ -104,6 +115,17 @@ void ControlServoTask::run() {
         // On rising edge of override, lock yaw reference to current yaw.
         controller_.setYawReference(state.eulerYawDeg);
       }
+
+      if (overrideResetRequest && !overrideResetLatched_) {
+        // Reinitialize the estimator to current sensor readings; mirrors boot behavior.
+        if (estimator_.resetOrientation()) {
+          nowMs = millis();
+          state = estimator_.estimate(nowMs);
+          controller_.setYawReference(state.eulerYawDeg);
+        }
+        overrideResetLatched_ = true;
+      }
+
       state.overrideActive = true;
       state.controlSignal = controller_.computeCommand(state);
 
