@@ -27,10 +27,11 @@ void SdLoggerTask::run() {
   ControlData incoming;
   for (;;) {
     if (dataQueue_ && xQueueReceive(dataQueue_, &incoming, pdMS_TO_TICKS(100)) == pdPASS) {
-      Serial.printf("euler(deg) roll=%.2f pitch=%.2f yaw=%.2f\n",
+      Serial.printf("euler(deg) roll=%.2f pitch=%.2f yaw=%.2f | yaw_ref=%.2f\n",
                     static_cast<double>(incoming.eulerRollDeg),
                     static_cast<double>(incoming.eulerPitchDeg),
-                    static_cast<double>(incoming.eulerYawDeg));
+                    static_cast<double>(incoming.eulerYawDeg),
+                    static_cast<double>(incoming.yawRefDeg));
 
       if (!sdReady) {
         sdReady = csvLogger.begin();

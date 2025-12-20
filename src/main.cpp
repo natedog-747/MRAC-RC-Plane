@@ -18,6 +18,11 @@ static const uint32_t OVERRIDE_THRESHOLD_US = 1400; // near servo midpoint
 static const uint32_t OVERRIDE_RESET_THRESHOLD_US = 1800; // higher "level" to re-zero orientation
 static const int OVERRIDE_ANGLE_DEG = 90;          // angle to drive when override is active
 
+// Step command profile applied while override is active.
+static const int STEP_COMMAND_COUNT = 5;
+static const float STEP_COMMAND_DEG = 20.0f;
+static const float STEP_COMMAND_HOLD_SEC = 5.0f;
+
 // Shared queue for passing control data from core0 -> core1 logger.
 static QueueHandle_t gControlDataQueue = nullptr;
 
@@ -40,6 +45,9 @@ void setup() {
   gControlDataQueue = xQueueCreate(10, sizeof(ControlData));
   controlServoTask.setDataQueue(gControlDataQueue);
   sdLoggerTask.setQueue(gControlDataQueue);
+  controlServoTask.configureStepCommand(STEP_COMMAND_COUNT,
+                                        STEP_COMMAND_DEG,
+                                        STEP_COMMAND_HOLD_SEC);
 
   controlServoTask.start();
   sdLoggerTask.start();

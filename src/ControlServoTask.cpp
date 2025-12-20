@@ -24,6 +24,10 @@ volatile bool& ControlServoTask::overrideFlag() {
   return overrideActive_;
 }
 
+void ControlServoTask::configureStepCommand(int steps, float stepDegrees, float stepDurationSec) {
+  controller_.configureStepCommand(steps, stepDegrees, stepDurationSec);
+}
+
 void ControlServoTask::setDataQueue(QueueHandle_t queue) {
   dataQueue_ = queue;
 }
@@ -143,6 +147,7 @@ void ControlServoTask::run() {
       }
       state.overrideActive = false;
       state.controlSignal = 0.0f;
+      state.yawRefDeg = state.eulerYawDeg;
     }
 
     if (targetAngle >= 0) {

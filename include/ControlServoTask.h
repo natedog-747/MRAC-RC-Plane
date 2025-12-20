@@ -24,6 +24,7 @@ class ControlServoTask : public TaskBase {
   // Exposes a flag others can watch to know when override is active.
   volatile bool& overrideFlag();
   void setDataQueue(QueueHandle_t queue);
+  void configureStepCommand(int steps, float stepDegrees, float stepDurationSec);
 
  protected:
   void run() override;

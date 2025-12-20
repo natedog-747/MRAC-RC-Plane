@@ -46,10 +46,10 @@ bool CsvLogger::append(const ControlData& data) {
   }
 
   if (newFile) {
-    file.println("timestamp_ms,dt_sec,accel_x_mps2,accel_y_mps2,accel_z_mps2,gyro_x_rad_s,gyro_y_rad_s,gyro_z_rad_s,euler_roll_deg,euler_pitch_deg,euler_yaw_deg,euler_roll_rate_deg_s,euler_pitch_rate_deg_s,euler_yaw_rate_deg_s,yaw_error_int_deg_s,control_signal,override_active");
+    file.println("timestamp_ms,dt_sec,accel_x_mps2,accel_y_mps2,accel_z_mps2,gyro_x_rad_s,gyro_y_rad_s,gyro_z_rad_s,euler_roll_deg,euler_pitch_deg,euler_yaw_deg,euler_roll_rate_deg_s,euler_pitch_rate_deg_s,euler_yaw_rate_deg_s,yaw_ref_deg,yaw_error_int_deg_s,control_signal,override_active");
   }
 
-  file.printf("%lu,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d\n",
+  file.printf("%lu,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d\n",
               static_cast<unsigned long>(data.timestampMs),
               static_cast<double>(data.dtSec),
               static_cast<double>(data.accelXMps2),
@@ -64,6 +64,7 @@ bool CsvLogger::append(const ControlData& data) {
               static_cast<double>(data.eulerRollRateDegPerSec),
               static_cast<double>(data.eulerPitchRateDegPerSec),
               static_cast<double>(data.eulerYawRateDegPerSec),
+              static_cast<double>(data.yawRefDeg),
               static_cast<double>(data.yawErrorIntegralDegSec),
               static_cast<double>(data.controlSignal),
               data.overrideActive ? 1 : 0);
