@@ -2,40 +2,51 @@
 #include <Arduino.h>  // for constrain
 #include <cmath>
 
-float ControlAlgorithm::computeCommand(ControlData& state) {
-  // LQR-style state feedback: u = -K * (x - x_ref)
-  static const Matrix<1, 3> K = {0.75f, 0.1f, 0.1f}; // tune as needed
-  static float yawRefDeg = 0.0f;                     // reference yaw angle (deg)
-  static constexpr float yawRateRefDeg = 0.0f;       // reference yaw rate
-  static float integralYawError = 0.0f;              // integral of yaw error
-  static float servoCenter = 85.0f;
-  static float maxServoDeflection = 25.0f;            // max servo deflection
-  static float maxIntegralError = 10.0f;               // max integral error (deg)
-  const float dt = state.dtSec;
+namespace {
+const Matrix<1, 3> kGain = {0.75f, 0.1f, 0.1f};  // tune as needed
+constexpr float kServoCenter = 85.0f;
+constexpr float kMaxServoDeflection = 25.0f;
+}  // namespace
 
-  auto wrapDeg = [](float deg) -> float {
-    // Wrap to (-180, 180]
-    while (deg > 180.0f) deg -= 360.0f;
-    while (deg <= -180.0f) deg += 360.0f;
-    return deg;
-  };
+float ControlAlgorithm::wrapTo360(float deg) {
+  while (deg < 0.0f) deg += 360.0f;
+  while (deg >= 360.0f) deg -= 360.0f;
+  return deg;
+}
+
+float ControlAlgorithm::wrapErrorDeg(float actual360, float ref360) {
+  float diff = actual360 - ref360;
+  while (diff > 180.0f) diff -= 360.0f;
+  while (diff < -180.0f) diff += 360.0f;
+  return diff;
+}
+
+void ControlAlgorithm::setYawReference(float yawDeg) {
+  yawRefDeg_ = wrapTo360(yawDeg);
+  integralYawError_ = 0.0f;
+}
+
+float ControlAlgorithm::computeCommand(ControlData& state) {
+  const float dt = state.dtSec;
 
   const float yaw = state.eulerYawDeg;
   const float yawRate = state.eulerYawRateDegPerSec;
 
-  const float yawError = wrapDeg(yaw - yawRefDeg);
+  // Normalize yaw to [0, 360) to support commands that cross 180/-180 boundaries.
+  const float yaw360 = wrapTo360(yaw);
+  const float yawError = wrapErrorDeg(yaw360, yawRefDeg_);
   if (dt > 0.0f) {
-    integralYawError += yawError * dt;
+    integralYawError_ += yawError * dt;
   }
-  state.yawErrorIntegralDegSec = integralYawError;
+  state.yawErrorIntegralDegSec = integralYawError_;
 
   // Error state vector directly (avoids separate x/xRef construction)
-  Matrix<3, 1> xErr = {yawError, yawRate - yawRateRefDeg, integralYawError};
-  Matrix<1, 1> uMat = -K * xErr;
+  Matrix<3, 1> xErr = {yawError, yawRate - yawRateRefDeg_, integralYawError_};
+  Matrix<1, 1> uMat = -kGain * xErr;
   float u = uMat(0, 0);
 
   // Offset to servo range and clamp.
-  u += servoCenter;
-  u = constrain(u, servoCenter - maxServoDeflection, servoCenter + maxServoDeflection);
+  u += kServoCenter;
+  u = constrain(u, kServoCenter - kMaxServoDeflection, kServoCenter + kMaxServoDeflection);
   return u;
 }

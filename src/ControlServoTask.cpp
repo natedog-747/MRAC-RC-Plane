@@ -39,6 +39,7 @@ void ControlServoTask::run() {
   for (;;) {
     uint32_t nowMs = millis();
     ControlData state = estimator_.estimate(nowMs);
+    bool prevOverride = overrideActive_;
 
     // Measure the override channel first; use a small state machine to require consecutive samples.
     uint32_t overrideUs = pulseIn(overridePin_, HIGH, kPulseTimeoutUs);
@@ -99,6 +100,10 @@ void ControlServoTask::run() {
     uint32_t targetUs = 0;
 
     if (overrideActive_) {
+      if (!prevOverride) {
+        // On rising edge of override, lock yaw reference to current yaw.
+        controller_.setYawReference(state.eulerYawDeg);
+      }
       state.overrideActive = true;
       state.controlSignal = controller_.computeCommand(state);
 
